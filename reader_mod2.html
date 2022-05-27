@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+	#controls{
+		position:fixed;
+		z-index:99;
+		padding:5px;
+		background-color:lightblue;
+		overflow:auto;
+	}
+</style>
+</head>
+<body>
+
+    
+  
+	<div id = "controls">
+		<button id="playbtn" style = "overflow:auto;">play</button>
+		<button id="stop" style = "overflow:auto;">stop</button>
+		<button id="pause" style = "overflow:auto;">pause</button>
+		<select id="speed" onchange="speed()" style = "overflow:auto;">
+			<option value ="1">1</option>
+			<option value ="2" >2</option>
+			<option value ="3">3</option>
+			<option value ="4">4</option>
+			<option value ="5">5</option>
+			<option value ="6">6</option>
+			<option value ="7">7</option>
+			<option value ="8">8</option>
+			<option value ="9">9</option>
+			<option value ="10">10</option>
+			<option value ="11">11</option>
+			<option value ="12">12</option>
+		</select>
+		<div>
+			<label for="voiceSelect">Voices</label>
+			<select id="voiceSelect"></select>
+		</div>
+		<div style = "overflow:auto;">
+			<label for="scroll">Scroll</label>
+			<input type="checkbox" id="scroll" value="scroll" checked />
+		</div>
+	</div>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+	<textarea id="textarea"style="width: 80px ; height:100px"></textarea>
+	</br>
+	<div id ="panel" style = "max-width: 95%; height:auto;position:relative;" >
+	</div>
+ 
+	
+	<script>
+		var utterance = new SpeechSynthesisUtterance();
+		synth=window.speechSynthesis;
+		var wordIndex = 0;
+		var count=0;
+		utterance.lang = 'en-UK';
+		utterance.rate = 4;
+		utterance.volume = 1;
+		var text="";
+		var prevw=0;
+		var ofs=0;
+		populateVoiceList();
+		if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+		  speechSynthesis.onvoiceschanged = populateVoiceList;
+		}
+
+		document.getElementById('playbtn').onclick = function(){
+			if (document.getElementById('playbtn').innerHTML =="resume"){
+				synth.resume();
+				document.getElementById('playbtn').innerHTML = 'play';
+			}
+			else{
+				document.getElementById("panel").innerHTML="";
+				text    = document.getElementById('textarea').value;
+				text = text.replace(/</g,'{{');
+				text = text.replace(/>/g,'}}');
+				var words   = text.split(" ");
+				// Draw the text in a div
+				//document.getElementById(panel).innerHTML='<p>'+text'</p>';
+				console.info("draw panel");
+				//drawTextInPanel(text);
+				var n=text.replace(/\n/g, '</br>');
+				document.getElementById("panel").innerHTML=
+					text.replace(/\n|\w+/g, function(match, offset, string){ 
+						if (match=="\n"){
+							return '</br>'
+						}
+						count++;
+						return '<span ondblclick = "beginHere(this)" id = "'+offset+'" class="'+count+'">'+match+'</span>';
+					});
+					
+				utterance.lang = 'en-UK';
+				spokenTextArray = words;
+				utterance.text = text;
+				speechSynthesis.speak(utterance);
+			}
+		};
+		function speed(){
+			utterance.rate = Number (document.getElementById('speed').value)>>> 0;
+			beginHere(document.getElementById((prevw)) );
+			
+		}
+		document.addEventListener('keyup', (e) => {
+			if(e.keyCode===39){
+				var num=parseInt(document.getElementById( (prevw+ofs) ).className);
+				num = num+10;
+				if(num>count){
+					return;
+				}
+				 beginHere(document.getElementsByClassName( num )[0] );
+				 console.log('right');
+				 return;
+			}
+			else if(e.keyCode===37){
+				var num=parseInt(document.getElementById( (prevw+ofs) ).className);
+				num = num-10;
+				if(num<=0){
+					beginHere(document.getElementsByClassName( 1 )[0] );
+					return;
+				}
+				 beginHere(document.getElementsByClassName( num )[0] );
+				 console.log('left');
+				 return;
+			}
+		});
+		function beginHere(e){
+			console.log('trying to start');
+			synth.cancel();
+			var id = e.id;
+			var index = Number (id.substr(0)) >>> 0;
+			ofs=index;
+			utterance.text=text.substr(index);
+			synth.speak(utterance);
+		}
+		document.getElementById('stop').onclick = function(){
+			synth.cancel();
+		};
+		document.getElementById('pause').onclick = function(){
+			synth.pause();
+			document.getElementById('playbtn').innerHTML = 'resume';
+		};
+		document.getElementById('voiceSelect').onchange = function(){
+			
+			synth.cancel();
+			voices = synth.getVoices();
+			utterance.voice =voices[this.options[this.selectedIndex].getAttribute("num")]
+			beginHere(document.getElementById( (prevw) ) );
+		};
+		function populateVoiceList() {
+		  if(typeof speechSynthesis === 'undefined') {
+			return;
+		  }
+
+		  voices = speechSynthesis.getVoices();
+
+		  for(i = 0; i < voices.length ; i++) {
+			var option = document.createElement('option');
+			option.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+			
+			if(voices[i].default) {
+			  option.textContent += ' -- DEFAULT';
+			}
+
+			option.setAttribute('data-lang', voices[i].lang);
+			option.setAttribute('data-name', voices[i].name);
+			option.setAttribute('num', i);
+			document.getElementById("voiceSelect").appendChild(option);
+		  }
+		}
+
+		utterance.onboundary = function(event){
+			//var e = document.getElementById('textarea');
+			//var word = getWordAt(e.value,event.charIndex);
+			//console.info(wordIndex + " "+ word);
+			/*var panel= document.getElementById("panel");
+			var word = panel.innerHTML.substr(event.charIndex).search(/\s/);
+			var replacement = '<span style="color:blue;" id="'+event.charIndex+'">';
+			var rep = '&nbsp</span>';
+			*/
+			
+			try{
+				/*panel.innerHTML=panel.innerHTML.substr(0, event.charIndex) + 
+					replacement+ word+ +rep
+					+ panel.innerHTML.substr(event.charIndex + word.length+replacement.length+rep.length);
+				*/
+				if(document.getElementById('scroll').checked){
+					//document.getElementById((event.charIndex+ofs) ).scrollIntoView();
+					var element = document.getElementById((event.charIndex+ofs));
+					var elementRect = element.getBoundingClientRect();
+					var absoluteElementTop = elementRect.top + window.pageYOffset;
+					var middle = absoluteElementTop - (window.innerHeight / 2);
+					window.scrollTo(0, middle);
+				}
+				document.getElementById((prevw+ofs) ).style.color = "black";
+				document.getElementById((event.charIndex+ofs) ).style.color = "blue";
+			}catch(e){}
+			prevw=event.charIndex;
+
+			//wordIndex++;
+		};
+		/*function getWordAt(str, pos) {
+			// Perform type conversions.
+			str = String(str);
+			pos = Number(pos) >>> 0;
+
+			// Search for the word's beginning and end.
+			var left = str.slice(0, pos + 1).search(/\S+$/),
+				right = str.slice(pos).search(/\s/);
+
+			// The last word in the string is a special case.
+			if (right < 0) {
+				return str.slice(left);
+			}
+			// Return the word, using the located bounds to extract it from the string.
+			return str.slice(left, right + pos);
+		}*/
+
+
+		utterance.onend = function(){
+			//document.getElementById("panel").innerHTML = "";
+		};
+		/*function drawTextInPanel(text){
+			var panel = document.getElementById("panel");
+			var word="";
+			var count=0;
+			
+			for(var i = 0;i < text.length;i++){
+				if(text.charAt(i)==" "&&word!=""){
+					var html = '<span  id="word_span_'+(i-word.length)+'">'+word+' &nbsp;</span>';
+					panel.innerHTML += html;
+					//global_words[count]=word;
+					word="";
+					count++;
+				}
+				else if(text.charAt(i)=="\n"){
+					if(word!=""){
+						var html = '<span class="wordz"  id="word_span_'+(i-word.length)+'">'+word+' &nbsp;</span></br></br>';
+						panel.innerHTML += html;
+						word="";
+						count++;
+					}
+					else{
+						panel.innerHTML += "</br>";
+					}
+				}
+				else{
+					word+=text.charAt(i);
+				}
+				
+			}
+			
+			var html = '<span  id="word_span_'+(i-word.length)+'">'+word+'&nbsp; </span>';
+			panel.innerHTML += html;
+		}*/
+		/*function drawTextInPanel(words_array){
+			var panel = document.getElementById("panel");
+			var count=1;
+			for(var i = 0;i < words_array.length;i++){
+				if(words_array[i].length >0){
+					var html = '<span id="word_span_'+count+'">'+words_array[i]+'&nbsp;</span>';
+					count++;
+					panel.innerHTML += html;
+				}
+			}
+		}*/
+	</script>
+
+</body>
+</html>
