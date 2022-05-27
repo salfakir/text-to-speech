@@ -1,0 +1,11 @@
+This is a website that reads texts given to it.
+Note: Reader_mod2.html contains most up-to-date features.
+ 
+ CONTROLS:
+ left arrow: moves back reading 10 words
+ right arrow: moves forward reading 10 words
+ double clicking a word: stops reading and begins reading where double clicked.
+ 
+ Known issues:
+ the dictation may sometimes become unsyncned with some long texts.
+ the resume button can break.
